@@ -1,3 +1,7 @@
+require "httparty"
+require "nokogiri"
+require "pry"
+
 module Feedproxy
   class Feed
     class Item
@@ -7,15 +11,21 @@ module Feedproxy
 
       def to_h
         {
-          uuid: @element.css('guid').text,
-          summary: @element.css('title').text,
+          uuid: uuid,
+          summary: summary,
           description: description,
           published_at: published_at,
           link: link
         }
       end
 
-      private
+      def summary
+        @element.css('title').text
+      end
+
+      def uuid
+        @element.xpath('.//guid | .//id').first.text
+      end
 
       def link
         enclosure = @element.css('enclosure')
@@ -43,7 +53,7 @@ module Feedproxy
     def items
       Enumerator.new do |yielder|
         parsed.xpath('//rss/channel/item | //feed/entry').each do |element|
-          yielder << Item.new(element).to_h
+          yielder << Item.new(element)
         end
       end
     end
